@@ -26,3 +26,7 @@ jobs:
           role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
           role-session-name: pruebavodafone
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload tfstate to S3
+        run: |
+          aws s3 cp terraform.tfstate s3://${{ env.BUCKET_NAME }}/terraform.tfstate
