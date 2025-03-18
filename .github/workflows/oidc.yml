@@ -1,5 +1,4 @@
-# Workflow para consultar el contenido de un bucket S3 en AWS
-name: AWS S3 List Objects Workflow
+name: Assume role with OIDC
 on:
   push:
     branches:
@@ -15,7 +14,7 @@ permissions:
   contents: read    # Necesario para actions/checkout
 
 jobs:
-  ListS3Objects:
+  AssumeRole:
     runs-on: ubuntu-latest
     steps:
       - name: Git clone the repository
@@ -27,8 +26,3 @@ jobs:
           role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
           role-session-name: pruebavodafone
           aws-region: ${{ env.AWS_REGION }}
-
-      # Consultar el contenido del bucket S3
-      - name: List objects in S3 bucket
-        run: |
-          aws s3 ls s3://${{ env.BUCKET_NAME }}/
