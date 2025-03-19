@@ -3,6 +3,10 @@ name: Pull Request Workflow
 on:
   pull_request:
     types: [opened, synchronize]
+    
+env:
+  BUCKET_NAME: "bucket-lambda-rds-example"
+  AWS_REGION: "eu-west-1"     
 
 jobs:
   validate:
