@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  BUCKET_NAME: "bucket-lambda-rds-example"
+
 jobs:
   verify-pull-request:
     runs-on: ubuntu-latest
