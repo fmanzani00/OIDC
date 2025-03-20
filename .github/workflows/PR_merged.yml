@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  verify-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Verify PR
+        run: echo "Verifying pull request..."
+
+  on-merge:
+    needs: verify-pull-request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run GitHub Action
+        run: echo "Running GitHub Action..."
+
+      - name: Load tiplan
+        run: | 
+          echo "Loading tfplan..."
+          aws s3 cp s3://${{ env.BUCKET_NAME }}/tf.plan ./tf.plan
+
+      - name: Terraform Apply
+        run: |
+          echo "Applying Terraform changes..."
+          terraform apply tf.plan
