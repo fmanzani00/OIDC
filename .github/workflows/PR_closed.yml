@@ -1,0 +1,23 @@
+name: PR Closed Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+    
+env:
+  BUCKET_NAME: "bucket-lambda-rds-example"
+
+jobs:
+  on-pr-closed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run GitHub Action
+        run: echo "Running GitHub Action..."
+
+      - name: Remove tiplan
+        run: |
+          echo "Removing tfplan..."
+          aws s3 rm s3://${{ env.BUCKET_NAME }}/tf.plan
