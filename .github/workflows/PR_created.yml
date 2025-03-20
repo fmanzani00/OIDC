@@ -20,6 +20,11 @@ jobs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: "1.5.0"
+        
+    - name: Initalitation
+      run: |
+        echo "Running Initalitation..."
+        terraform init
 
     - name: Validate
       run: |
