@@ -7,15 +7,14 @@ on:
 env:
   BUCKET_NAME: "bucket-lambda-rds-example"
   AWS_REGION: "eu-west-1" 
-  
-permissions:
-  id-token: write   # Necesario para solicitar el JWT (autenticación con OIDC)
-  contents: read    # Necesario para actions/checkout
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write  # Necesario para OIDC
+      contents: read   # Necesario para checkout
+      
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
