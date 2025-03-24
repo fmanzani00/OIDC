@@ -1,0 +1,13 @@
+name: Deploy Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  call-reusable-workflow:
+    uses: ./.github/workflows/terraform-validate.yml
+    with:
+      environment: 'dev'  # Puede venir de una variable o condición
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
