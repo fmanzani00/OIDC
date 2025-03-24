@@ -41,9 +41,9 @@ jobs:
         echo "Running validation..."
         terraform validate
 
-    - name: Save tiplan
+    - name: Save tfplan
       run: |
-        echo "Saving tiplan..."
+        echo "Saving tfplan..."
         terraform plan -out tf.plan
 
     - name: Plan
