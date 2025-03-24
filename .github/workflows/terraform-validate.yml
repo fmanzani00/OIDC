@@ -25,4 +25,4 @@ jobs:
 
       - name: Set Bucket Name
         run: |
-          echo "BUCKET_NAME=bucket-lambda-${{ inputs.environment }}" >> $GITHUB_ENV
+          echo "BUCKET_NAME=bucket-vodafone-${{ inputs.environment }}" >> $GITHUB_ENV
