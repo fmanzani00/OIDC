@@ -1,0 +1,28 @@
+name: Terraform Validate (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}-${{ inputs.environment }}
+          aws-region: eu-west-1
+
+      - name: Set Bucket Name
+        run: |
+          echo "BUCKET_NAME=bucket-lambda-${{ inputs.environment }}" >> $GITHUB_ENV
