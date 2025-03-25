@@ -8,15 +8,14 @@ on:
         type: string
     secrets:
       AWS_ROLE_ARN:
-        required: true
-
-permissions:
-  id-token: write
-  contents: read    
+        required: true 
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read   
     steps:
       - name: Checkout
         uses: actions/checkout@v4
