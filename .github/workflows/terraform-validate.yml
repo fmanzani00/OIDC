@@ -10,6 +10,10 @@ on:
       AWS_ROLE_ARN:
         required: true
 
+permissions:
+  id-token: write
+  contents: read    
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -17,12 +21,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS
+      - name: Configure AWS OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}-${{ inputs.environment }}
-          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
+          role-session-name: pruebavodafone
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Set Bucket Name
         run: |
-          echo "BUCKET_NAME=bucket-vodafone-${{ inputs.environment }}" >> $GITHUB_ENV
+          echo "BUCKET_NAME=bucket-${{ inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Terraform Plan
+        run: terraform plan -out tf.plan
