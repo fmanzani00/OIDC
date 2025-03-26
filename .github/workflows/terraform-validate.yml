@@ -1,4 +1,4 @@
-name: Terraform Validate (Reusable)
+name: Terraform Validate
 
 on:
   workflow_call:
@@ -6,26 +6,22 @@ on:
       environment:
         required: true
         type: string
-    secrets:
-      AWS_ROLE_ARN:
-        required: true 
 
 jobs:
-  validate:
+  send-file-to-s3:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read   
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    environment: ${{ inputs.environment }}
 
-      - name: Configure AWS OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
-          role-session-name: pruebavodafone
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-1
+          role-session-name: GitHubActionsSession
 
       - name: Set Bucket Name
         run: |
