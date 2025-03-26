@@ -2,15 +2,15 @@ name: Deploy Pipeline
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened]
 
 jobs:
-  call-reusable-workflow:
+  deploy-to-s3:
     permissions:
-      id-token: write  # Necesario para OIDC
-      contents: read   # Necesario para checkout
-    uses: ./.github/workflows/terraform-validate.yml
+      id-token: write  
+      contents: read   
+    uses: ./.github/workflows/terraform-validate.yml  
     with:
-      environment: 'dev'  # Puede venir de una variable o condición
+      environment: ${{ github.event.pull_request.base.ref }}
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
