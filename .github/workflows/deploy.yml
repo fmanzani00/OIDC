@@ -14,3 +14,5 @@ jobs:
       environment: ${{ github.event.pull_request.base.ref }}
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      aws-region: eu-west-1
+      role-session-name: GitHubActionsSession
