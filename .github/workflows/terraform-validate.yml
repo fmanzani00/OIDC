@@ -1,0 +1,31 @@
+name: Terraform Validate
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  send-file-to-s3:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-1
+          role-session-name: GitHubActionsSession
+
+      - name: Set Bucket Name
+        run: |
+          echo "BUCKET_NAME=bucket-${{ inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Terraform Plan
+        run: terraform plan -out tf.plan
