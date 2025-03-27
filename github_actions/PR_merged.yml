@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  BUCKET_NAME: "bucket-lambda-rds-example"
+  AWS_REGION: "eu-west-1"
+
+jobs:
+  verify-pull-request:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Necesario para OIDC
+      contents: read   # Necesario para checkout
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
+          role-session-name: pruebavodafone
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify PR
+        run: echo "Verifying pull request..."
+
+  on-merge:
+    needs: verify-pull-request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run GitHub Action
+        run: echo "Running GitHub Action..."
+
+      - name: Load tfplan
+        run: |
+          echo "Loading tfplan..."
+          aws s3 cp s3://${{ env.BUCKET_NAME }}/tf.plan ./tf.plan
+
+      - name: Terraform Apply
+        run: |
+          echo "Applying Terraform changes..."
+          terraform apply tf.plan
