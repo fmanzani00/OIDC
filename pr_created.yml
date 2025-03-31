@@ -1,0 +1,41 @@
+name: Terraform PR Plan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+env:
+  BUCKET_NAME: "your-tfplans-bucket"
+  AWS_REGION: "eu-west-1"
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
+          role-session-name: github-terraform-plan
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init -backend-config="env/dev/backend.tfvars"  # Ajustar según necesidad
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -var-file="env/dev/terraform.tfvars" -out=tfplan
+          aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ github.event.number }}/dev-tfplan
