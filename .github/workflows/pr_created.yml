@@ -33,9 +33,9 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Init
-        run: terraform init -backend-config="env/dev/backend.tfvars"  # Ajustar según necesidad
+        run: terraform init
 
       - name: Terraform Plan
         run: |
-          terraform plan -var-file="env/dev/terraform.tfvars" -out=tfplan
+          terraform plan -out=tfplan
           aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ github.event.number }}/dev.tfplan
