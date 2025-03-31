@@ -11,7 +11,7 @@ module "vpc" {
   source = "./vpc"
 
   name = "vpc-git"
-  cidr = "140.0.0.0/16"
+  cidr = "130.0.0.0/16"
 
   service_name = "com.amazonaws.eu-west-1.ec2"
 }
