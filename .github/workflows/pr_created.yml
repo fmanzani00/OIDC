@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  BUCKET_NAME: "your-tfplans-bucket"
+  BUCKET_NAME: "bucket-vodafone-dev"
   AWS_REGION: "eu-west-1"
 
 jobs:
@@ -38,4 +38,4 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan -var-file="env/dev/terraform.tfvars" -out=tfplan
-          aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ github.event.number }}/dev-tfplan
+          aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ github.event.number }}/dev.tfplan
