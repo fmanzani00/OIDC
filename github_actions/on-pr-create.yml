@@ -1,0 +1,21 @@
+name: On PR Create/Update
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+# limitar evento
+jobs:
+  validate:
+    permissions:
+      id-token: write
+      contents: read
+
+    uses: ./.github/workflows/terraform-validate.yml
+    with:
+      environment: ${{ github.event.pull_request.base.ref }}
+      action_type: 'plan'
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+# comprobar si la rama existe en el repo
+# triggers

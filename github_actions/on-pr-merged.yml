@@ -1,0 +1,21 @@
+name: On PR Merged
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+
+    permissions:
+      id-token: write
+      contents: read
+
+    uses: ./.github/workflows/terraform-validate.yml
+    with:
+      environment: 'prod'
+      action_type: 'apply'
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
