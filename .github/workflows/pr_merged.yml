@@ -1,76 +1,52 @@
-name: Terraform PR Apply
-
 on:
   pull_request:
     types: [closed]
     branches:
-      - main 
-
-env:
-  BUCKET_NAME: "bucket-vodafone-dev"  
-  AWS_REGION: "eu-west-1"            
+      - main
 
 jobs:
   verify-merge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true  
+    if: github.event.pull_request.merged == true
     outputs:
       pr_number: ${{ github.event.pull_request.number }}
-      environment: ${{ steps.set-env.outputs.environment }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Extract PR number
+        run: echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
 
-      - name: Set environment
-        id: set-env
-        run: |
-          # Ejemplo: obtener entorno de una label del PR
-          # ENVIRONMENT=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          #   ${{ github.event.pull_request.issue_url }}/labels | jq -r '.[] | select(.name | match("env-")) | .name' | cut -d'-' -f2)
-          # echo "environment=${ENVIRONMENT:-dev}" >> $GITHUB_OUTPUT
-          echo "environment=dev" >> $GITHUB_OUTPUT  # Valor por defecto
-
-  apply-terraform:
+  apply-dev:
     needs: verify-merge
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    environment: ${{ needs.verify-merge.outputs.environment }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::557760777793:role/github-role
-          role-session-name: GitHubActionsSession
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Init
-        run: terraform init -backend-config="env/${{ needs.verify-merge.outputs.environment }}/backend.tfvars"
-
-      - name: Load tfplan from S3
-        run: |
-          echo "Loading tfplan for PR ${{ needs.verify-merge.outputs.pr_number }}"
-          aws s3 cp s3://${{ env.BUCKET_NAME }}/pr-${{ needs.verify-merge.outputs.pr_number }}/${{ needs.verify-merge.outputs.environment }}-tfplan tfplan
-
-      - name: Terraform Apply
-        run: |
-          echo "Applying Terraform changes for environment ${{ needs.verify-merge.outputs.environment }}"
-          terraform apply -auto-approve tfplan
-
-      - name: Cleanup tfplan from S3
-        run: |
-          echo "Cleaning up tfplan after apply"
-          aws s3 rm s3://${{ env.BUCKET_NAME }}/pr-${{ needs.verify-merge.outputs.pr_number }}/${{ needs.verify-merge.outputs.environment }}-tfplan
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'dev'
+      trigger_type: 'apply'
+      pr_number: ${{ needs.verify-merge.outputs.pr_number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_ROLE_ARN }}
+  
+  apply-pre:
+    needs: verify-merge
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'pre'
+      trigger_type: 'apply'
+      pr_number: ${{ needs.verify-merge.outputs.pr_number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PRE_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PRE_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.PRE_AWS_ROLE_ARN }}
+  
+  apply-pro:
+    needs: verify-merge
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'pro'
+      trigger_type: 'apply'
+      pr_number: ${{ needs.verify-merge.outputs.pr_number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PRO_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PRO_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.PRO_AWS_ROLE_ARN }}
