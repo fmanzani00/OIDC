@@ -1,43 +1,28 @@
-name: Terraform PR Plan
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
 
-env:
-  BUCKET_NAME: "bucket-vodafone-dev"
-  AWS_REGION: "eu-west-1"
-
 jobs:
-  terraform-plan:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  plan-dev:
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'dev'
+      trigger_type: 'plan'
+      pr_number: ${{ github.event.number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_ROLE_ARN }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::557760777793:role/github-role
-          role-session-name: GitHubActionsSession
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: |
-          terraform plan -out=tfplan
-          aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ github.event.number }}/dev.tfplan
+  plan-pre:
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'pre'
+      trigger_type: 'plan'
+      pr_number: ${{ github.event.number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PRE_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PRE_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.PRE_AWS_ROLE_ARN }}
