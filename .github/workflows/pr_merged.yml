@@ -4,19 +4,16 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - main  # o la rama principal que uses
+      - main 
 
 env:
-  BUCKET_NAME: "your-tfplans-bucket"  # Cambiar por tu bucket
-  AWS_REGION: "eu-west-1"             # Ajustar región según necesites
+  BUCKET_NAME: "bucket-vodafone-dev"  
+  AWS_REGION: "eu-west-1"            
 
 jobs:
   verify-merge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-    permissions:
-      id-token: write   # Necesario para OIDC
-      contents: read    # Necesario para checkout
+    if: github.event.pull_request.merged == true  
     outputs:
       pr_number: ${{ github.event.pull_request.number }}
       environment: ${{ steps.set-env.outputs.environment }}
@@ -25,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set environment (puedes modificarlo para obtenerlo de labels, etc.)
+      - name: Set environment
         id: set-env
         run: |
           # Ejemplo: obtener entorno de una label del PR
@@ -49,9 +46,11 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC  # Ajustar ARN
-          role-session-name: github-terraform-apply
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::557760777793:role/github-role
+          role-session-name: GitHubActionsSession
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
