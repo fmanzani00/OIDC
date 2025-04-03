@@ -1,0 +1,56 @@
+name: Terraform Plan Base
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      bucket_name:
+        type: string
+        required: true
+      aws_region:
+        type: string
+        required: true
+      pr_number:
+        type: string
+        required: true
+    secrets:
+      aws_access_key_id:
+        required: true
+      aws_secret_access_key:
+        required: true
+      aws_role_arn:
+        required: true
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ inputs.aws_region }}
+          role-to-assume: ${{ secrets.aws_role_arn }}
+          role-session-name: GitHubActionsSession-${{ inputs.environment }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -out=tfplan
+          aws s3 cp tfplan s3://${{ inputs.bucket_name }}/pr-${{ inputs.pr_number }}/${{ inputs.environment }}.tfplan
