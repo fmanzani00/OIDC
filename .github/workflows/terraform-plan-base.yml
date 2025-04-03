@@ -1,34 +1,36 @@
-name: Terraform Plan Base
-
 on:
   workflow_call:
     inputs:
       environment:
         type: string
         required: true
-      bucket_name:
-        type: string
-        required: true
-      aws_region:
+      trigger_type:  # 'plan', 'apply', or 'destroy'
         type: string
         required: true
       pr_number:
         type: string
-        required: true
+        required: false
+        default: ''
     secrets:
-      aws_access_key_id:
+      AWS_ACCESS_KEY_ID:
         required: true
-      aws_secret_access_key:
+      AWS_SECRET_ACCESS_KEY:
         required: true
-      aws_role_arn:
+      AWS_ROLE_ARN:
         required: true
 
+env:
+  BUCKET_NAME: "bucket-vodafone-dev"
+  AWS_REGION: "eu-west-1"
+
 jobs:
-  terraform-plan:
+  terraform-execution:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
+    environment: ${{ inputs.environment }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,11 +38,11 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.aws_access_key_id }}
-          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
-          aws-region: ${{ inputs.aws_region }}
-          role-to-assume: ${{ secrets.aws_role_arn }}
-          role-session-name: GitHubActionsSession-${{ inputs.environment }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: ${{ inputs.environment }}-session
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -48,9 +50,21 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="env/${{ inputs.environment }}/backend.tfvars"
 
-      - name: Terraform Plan
+      - name: Execute Terraform Command
         run: |
-          terraform plan -out=tfplan
-          aws s3 cp tfplan s3://${{ inputs.bucket_name }}/pr-${{ inputs.pr_number }}/${{ inputs.environment }}.tfplan
+          case "${{ inputs.trigger_type }}" in
+            "plan")
+              terraform plan -out=tfplan
+              aws s3 cp tfplan s3://${{ env.BUCKET_NAME }}/pr-${{ inputs.pr_number }}/${{ inputs.environment }}.tfplan
+              ;;
+            "apply")
+              aws s3 cp s3://${{ env.BUCKET_NAME }}/pr-${{ inputs.pr_number }}/${{ inputs.environment }}.tfplan tfplan
+              terraform apply -auto-approve tfplan
+              aws s3 rm s3://${{ env.BUCKET_NAME }}/pr-${{ inputs.pr_number }}/${{ inputs.environment }}.tfplan
+              ;;
+            "destroy")
+              terraform destroy -auto-approve
+              ;;
+          esac
