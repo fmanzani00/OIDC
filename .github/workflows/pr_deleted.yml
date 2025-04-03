@@ -1,38 +1,28 @@
-name: Terraform PR Cleanup
-
 on:
   pull_request:
     types: [closed]
-
-env:
-  BUCKET_NAME: "your-tfplans-bucket"
-  AWS_REGION: "eu-west-1"
+    branches:
+      - main
 
 jobs:
-  check-not-merged:
-    if: github.event.pull_request.merged == false
+  verify-delete:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+    if: github.event.pull_request.merged == false
     outputs:
       pr_number: ${{ github.event.pull_request.number }}
 
-  cleanup-tfplan:
-    needs: check-not-merged
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::557760777793:role/asumir-role-OIDC
-          role-session-name: github-terraform-cleanup
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Extract PR number
+        run: echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
 
-      - name: Cleanup tfplan from S3
-        run: |
-          echo "Cleaning up tfplan for closed PR ${{ needs.check-not-merged.outputs.pr_number }}"
-          aws s3 rm s3://${{ env.BUCKET_NAME }}/pr-${{ needs.check-not-merged.outputs.pr_number }} --recursive
+  destroy-dev:
+    needs: verify-delete
+    uses: ./.github/workflows/terraform-base.yml
+    with:
+      environment: 'dev'
+      trigger_type: 'destroy'
+      pr_number: ${{ needs.verify-delete.outputs.pr_number }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_ROLE_ARN }}
