@@ -7,6 +7,10 @@ on:
 jobs:
   plan-dev:
     uses: ./.github/workflows/terraform-base.yml
+    permissions:
+      contents: read
+      pull-requests: write  # ← Nuevo permiso necesario
+      id-token: write
     with:
       environment: 'dev'
       trigger_type: 'plan'
